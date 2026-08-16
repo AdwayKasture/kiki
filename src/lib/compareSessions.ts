@@ -7,6 +7,12 @@ export interface MatchedPair {
   rightIndex: number
 }
 
+export interface ToolMatchResult {
+  matches: MatchedPair[]
+  leftUnmatched: Set<string>
+  rightUnmatched: Set<string>
+}
+
 function deepEqual(a: unknown, b: unknown): boolean {
   if (a === b) return true
   if (typeof a !== typeof b) return false
@@ -46,11 +52,15 @@ export function toolInputEqual(a: string, b: string): boolean {
   return deepEqual(aObj, bObj)
 }
 
+function toolsEqual(a: ToolEntry, b: ToolEntry): boolean {
+  return a.tool === b.tool && toolInputEqual(a.input, b.input)
+}
+
 export function computeToolMatches(
   leftEntries: Entry[],
   rightEntries: Entry[],
   ignoredIds: Set<string> = new Set(),
-): MatchedPair[] {
+): ToolMatchResult {
   const leftTools = leftEntries
     .map((e, i) => ({ e, i }))
     .filter(
@@ -65,20 +75,33 @@ export function computeToolMatches(
     )
 
   const matches: MatchedPair[] = []
-  const count = Math.min(leftTools.length, rightTools.length)
+  const matchedRightIndices = new Set<number>()
 
-  for (let i = 0; i < count; i++) {
-    const left = leftTools[i]
-    const right = rightTools[i]
-    if (toolInputEqual(left.e.input, right.e.input)) {
-      matches.push({
-        leftId: left.e.id,
-        rightId: right.e.id,
-        leftIndex: left.i,
-        rightIndex: right.i,
-      })
-    }
+  for (const left of leftTools) {
+    const rightIndex = rightTools.findIndex(
+      (right, index) => !matchedRightIndices.has(index) && toolsEqual(left.e, right.e),
+    )
+    if (rightIndex === -1) continue
+
+    matchedRightIndices.add(rightIndex)
+    matches.push({
+      leftId: left.e.id,
+      rightId: rightTools[rightIndex].e.id,
+      leftIndex: left.i,
+      rightIndex: rightTools[rightIndex].i,
+    })
   }
 
-  return matches
+  const leftUnmatched = new Set<string>(
+    leftTools
+      .filter((left) => !matches.some((m) => m.leftId === left.e.id))
+      .map((left) => left.e.id),
+  )
+  const rightUnmatched = new Set<string>(
+    rightTools
+      .filter((_, index) => !matchedRightIndices.has(index))
+      .map((right) => right.e.id),
+  )
+
+  return { matches, leftUnmatched, rightUnmatched }
 }

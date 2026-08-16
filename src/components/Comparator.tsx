@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Upload, ArrowRightLeft, Sparkles, X, Link2, Unlink, Wrench } from 'lucide-react'
+import { Upload, ArrowRightLeft, Sparkles, X, Link2, Unlink, Wrench, FilterX } from 'lucide-react'
 import { cn } from '../lib/utils'
 import { parseSessionMarkdown } from '../lib/parseSession'
 import { computeToolMatches } from '../lib/compareSessions'
@@ -202,6 +202,7 @@ export function Comparator() {
 
   const [scrollMode, setScrollMode] = useState<ScrollMode>('sync')
   const [toolsOnly, setToolsOnly] = useState(false)
+  const [hideUnmatched, setHideUnmatched] = useState(false)
 
   const containerRef = useRef<HTMLDivElement>(null)
   const rowElements = useRef<Record<string, HTMLElement | null>>({})
@@ -216,9 +217,32 @@ export function Comparator() {
     [rightEntries, toolsOnly],
   )
 
-  const matches = useMemo(
+  const { matches, leftUnmatched, rightUnmatched } = useMemo(
     () => computeToolMatches(filteredLeftEntries, filteredRightEntries, ignoredIds),
     [filteredLeftEntries, filteredRightEntries, ignoredIds],
+  )
+
+  const unmatchedIds = useMemo(() => {
+    const ids = new Set<string>(leftUnmatched)
+    for (const id of rightUnmatched) {
+      ids.add(id)
+    }
+    return ids
+  }, [leftUnmatched, rightUnmatched])
+
+  const visibleLeftEntries = useMemo(
+    () =>
+      hideUnmatched
+        ? filteredLeftEntries.filter((e) => e.type !== 'tool' || !unmatchedIds.has(e.id))
+        : filteredLeftEntries,
+    [filteredLeftEntries, hideUnmatched, unmatchedIds],
+  )
+  const visibleRightEntries = useMemo(
+    () =>
+      hideUnmatched
+        ? filteredRightEntries.filter((e) => e.type !== 'tool' || !unmatchedIds.has(e.id))
+        : filteredRightEntries,
+    [filteredRightEntries, hideUnmatched, unmatchedIds],
   )
 
   const highlightedIds = useMemo(() => {
@@ -296,6 +320,21 @@ export function Comparator() {
 
               <button
                 type="button"
+                onClick={() => setHideUnmatched((v) => !v)}
+                className={cn(
+                  'flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs transition-colors',
+                  hideUnmatched
+                    ? 'border-red-400 bg-red-500/10 text-red-500'
+                    : 'border-[var(--border)] text-[var(--text)] hover:bg-[var(--surface)]',
+                )}
+                title="Hide unmatched tool calls"
+              >
+                <FilterX className="h-3.5 w-3.5" />
+                Hide unmatched
+              </button>
+
+              <button
+                type="button"
                 onClick={swapSides}
                 className="flex items-center gap-1.5 rounded-md px-2 py-1 text-xs hover:bg-[var(--surface)]"
               >
@@ -326,9 +365,10 @@ export function Comparator() {
                 </button>
               </div>
               <ComparatorTimeline
-                entries={filteredLeftEntries}
+                entries={visibleLeftEntries}
                 highlightedIds={highlightedIds}
                 ignoredIds={ignoredIds}
+                unmatchedIds={unmatchedIds}
                 rowRef={handleRowRef}
                 onToggleIgnore={handleToggleIgnore}
               />
@@ -358,9 +398,10 @@ export function Comparator() {
                 </button>
               </div>
               <ComparatorTimeline
-                entries={filteredRightEntries}
+                entries={visibleRightEntries}
                 highlightedIds={highlightedIds}
                 ignoredIds={ignoredIds}
+                unmatchedIds={unmatchedIds}
                 rowRef={handleRowRef}
                 onToggleIgnore={handleToggleIgnore}
               />

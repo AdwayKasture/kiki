@@ -68,6 +68,7 @@ interface ComparatorTimelineProps {
   entries: Entry[]
   highlightedIds: Set<string>
   ignoredIds: Set<string>
+  unmatchedIds?: Set<string>
   rowRef?: (entryId: string, el: HTMLElement | null) => void
   onToggleIgnore?: (id: string) => void
 }
@@ -76,6 +77,7 @@ export function ComparatorTimeline({
   entries,
   highlightedIds,
   ignoredIds,
+  unmatchedIds = new Set(),
   rowRef,
   onToggleIgnore,
 }: ComparatorTimelineProps) {
@@ -91,15 +93,20 @@ export function ComparatorTimeline({
         const isIgnored = ignoredIds.has(entry.id)
         const isFirst = index === 0
         const isTool = entry.type === 'tool'
+        const isUnmatched = isTool && unmatchedIds.has(entry.id)
+        const prevIsTool = entries[index - 1]?.type === 'tool'
 
         return (
           <div
             key={entry.id}
             ref={(el) => rowRef?.(entry.id, el)}
             className={cn(
-              'group relative flex w-full items-start gap-4 rounded-lg px-4 py-3 text-left transition-colors',
+              'group relative flex w-full items-start gap-4 rounded-lg px-4 text-left transition-colors',
+              'py-4',
+              isTool && prevIsTool && 'mt-2',
               isHighlighted && !isIgnored ? 'bg-[var(--accent-bg)]' : 'hover:bg-[var(--surface)]',
               isIgnored && 'opacity-40',
+              isUnmatched && 'border-2 border-dashed border-red-400',
             )}
           >
             <div className="relative z-10 flex shrink-0 items-center justify-center">

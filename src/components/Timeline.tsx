@@ -81,6 +81,8 @@ export function Timeline({ entries, selectedId, onSelect }: TimelineProps) {
         const Icon = icons[entry.type]
         const isSelected = selectedId === entry.id
         const isFirst = index === 0
+        const isTool = entry.type === 'tool'
+        const prevIsTool = entries[index - 1]?.type === 'tool'
 
         return (
           <button
@@ -88,7 +90,9 @@ export function Timeline({ entries, selectedId, onSelect }: TimelineProps) {
             type="button"
             onClick={() => onSelect(entry.id)}
             className={cn(
-              'group relative flex w-full items-start gap-4 rounded-lg px-4 py-3 text-left transition-colors',
+              'group relative flex w-full items-start gap-4 rounded-lg px-4 text-left transition-colors',
+              'py-4',
+              isTool && prevIsTool && 'mt-2',
               isSelected ? 'bg-[var(--accent-bg)]' : 'hover:bg-[var(--surface)]',
             )}
           >
