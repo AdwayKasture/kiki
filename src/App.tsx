@@ -4,6 +4,7 @@ import { Overview } from './components/Overview'
 import { SessionList } from './components/SessionList'
 import { Timeline } from './components/Timeline'
 import { DetailPanel } from './components/DetailPanel'
+import { Comparator } from './components/Comparator'
 import { useSelectedEntry, useSelectedSession, useSessionStore } from './store/sessionStore'
 import { cn } from './lib/utils'
 
@@ -83,9 +84,7 @@ export default function App() {
 
         <main className="flex min-w-0 flex-1">
           {activeView === 'comparator' ? (
-            <div className="flex flex-1 flex-col items-center justify-center p-8 text-center">
-              <h2 className="text-2xl font-semibold">hello world</h2>
-            </div>
+            <Comparator />
           ) : selectedSession ? (
             <>
               <div className="flex flex-1 flex-col overflow-hidden">
