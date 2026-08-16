@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Upload, ArrowRightLeft, Sparkles } from 'lucide-react'
+import { Upload, ArrowRightLeft, Sparkles, X, Link2, Unlink, Wrench } from 'lucide-react'
 import { cn } from '../lib/utils'
 import { parseSessionMarkdown } from '../lib/parseSession'
 import { computeToolMatches } from '../lib/compareSessions'
@@ -150,13 +150,15 @@ function LineOverlay({
   )
 }
 
-function useSynchronizedScroll(enabled: boolean) {
+type ScrollMode = 'sync' | 'independent'
+
+function useSynchronizedScroll(mode: ScrollMode) {
   const leftRef = useRef<HTMLDivElement>(null)
   const rightRef = useRef<HTMLDivElement>(null)
   const syncing = useRef(false)
 
   useEffect(() => {
-    if (!enabled) return
+    if (mode !== 'sync') return
     const left = leftRef.current
     const right = rightRef.current
     if (!left || !right) return
@@ -179,7 +181,7 @@ function useSynchronizedScroll(enabled: boolean) {
       left.removeEventListener('scroll', handleLeft)
       right.removeEventListener('scroll', handleRight)
     }
-  }, [enabled])
+  }, [mode])
 
   return { leftRef, rightRef }
 }
@@ -191,19 +193,32 @@ export function Comparator() {
   const rightEntries = useComparatorEntries('right')
 
   const setSession = useComparatorStore((s) => s.setSession)
+  const clearSession = useComparatorStore((s) => s.clearSession)
   const ignoredIds = useComparatorStore((s) => s.ignoredIds)
   const setIgnored = useComparatorStore((s) => s.setIgnored)
   const swapSides = useComparatorStore((s) => s.swapSides)
 
   const hasBothSessions = Boolean(leftSession && rightSession)
 
+  const [scrollMode, setScrollMode] = useState<ScrollMode>('sync')
+  const [toolsOnly, setToolsOnly] = useState(false)
+
   const containerRef = useRef<HTMLDivElement>(null)
   const rowElements = useRef<Record<string, HTMLElement | null>>({})
-  const { leftRef, rightRef } = useSynchronizedScroll(hasBothSessions)
+  const { leftRef, rightRef } = useSynchronizedScroll(scrollMode)
+
+  const filteredLeftEntries = useMemo(
+    () => (toolsOnly ? leftEntries.filter((e) => e.type === 'tool') : leftEntries),
+    [leftEntries, toolsOnly],
+  )
+  const filteredRightEntries = useMemo(
+    () => (toolsOnly ? rightEntries.filter((e) => e.type === 'tool') : rightEntries),
+    [rightEntries, toolsOnly],
+  )
 
   const matches = useMemo(
-    () => computeToolMatches(leftEntries, rightEntries, ignoredIds),
-    [leftEntries, rightEntries, ignoredIds],
+    () => computeToolMatches(filteredLeftEntries, filteredRightEntries, ignoredIds),
+    [filteredLeftEntries, filteredRightEntries, ignoredIds],
   )
 
   const highlightedIds = useMemo(() => {
@@ -230,16 +245,66 @@ export function Comparator() {
     <div ref={containerRef} className="relative flex flex-1 flex-col overflow-hidden">
       <div className="flex items-center justify-between border-b border-[var(--border)] px-6 py-3">
         <h2 className="text-base font-semibold">Session comparator</h2>
-        {hasBothSessions && (
-          <button
-            type="button"
-            onClick={swapSides}
-            className="flex items-center gap-1.5 rounded-md px-2 py-1 text-xs hover:bg-[var(--surface)]"
-          >
-            <ArrowRightLeft className="h-4 w-4" />
-            Swap sides
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          {hasBothSessions && (
+            <>
+              <div className="flex items-center rounded-md border border-[var(--border)] p-0.5">
+                <button
+                  type="button"
+                  onClick={() => setScrollMode('sync')}
+                  className={cn(
+                    'flex items-center gap-1 rounded px-2 py-1 text-xs transition-colors',
+                    scrollMode === 'sync'
+                      ? 'bg-[var(--accent-bg)] text-[var(--accent)]'
+                      : 'text-[var(--text)] hover:bg-[var(--surface)]',
+                  )}
+                  title="Scroll both timelines together"
+                >
+                  <Link2 className="h-3.5 w-3.5" />
+                  Common
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setScrollMode('independent')}
+                  className={cn(
+                    'flex items-center gap-1 rounded px-2 py-1 text-xs transition-colors',
+                    scrollMode === 'independent'
+                      ? 'bg-[var(--accent-bg)] text-[var(--accent)]'
+                      : 'text-[var(--text)] hover:bg-[var(--surface)]',
+                  )}
+                  title="Scroll timelines independently"
+                >
+                  <Unlink className="h-3.5 w-3.5" />
+                  Independent
+                </button>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setToolsOnly((v) => !v)}
+                className={cn(
+                  'flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs transition-colors',
+                  toolsOnly
+                    ? 'border-[var(--accent)] bg-[var(--accent-bg)] text-[var(--accent)]'
+                    : 'border-[var(--border)] text-[var(--text)] hover:bg-[var(--surface)]',
+                )}
+                title="Show only tool calls"
+              >
+                <Wrench className="h-3.5 w-3.5" />
+                Tools only
+              </button>
+
+              <button
+                type="button"
+                onClick={swapSides}
+                className="flex items-center gap-1.5 rounded-md px-2 py-1 text-xs hover:bg-[var(--surface)]"
+              >
+                <ArrowRightLeft className="h-4 w-4" />
+                Swap sides
+              </button>
+            </>
+          )}
+        </div>
       </div>
 
       <div className="relative flex flex-1 overflow-hidden">
@@ -247,13 +312,21 @@ export function Comparator() {
           ref={leftRef}
           className="flex flex-1 flex-col overflow-y-auto border-r border-[var(--border)] px-4"
         >
-          {leftSession ? (
+            {leftSession ? (
             <>
-              <div className="sticky top-0 z-20 border-b border-[var(--border)] bg-[var(--background)] px-2 py-2 text-sm font-medium text-[var(--text-h)]">
-                {leftSession.title}
+              <div className="sticky top-0 z-20 flex items-center justify-between border-b border-[var(--border)] bg-[var(--background)] px-2 py-2">
+                <span className="truncate text-sm font-medium text-[var(--text-h)]">{leftSession.title}</span>
+                <button
+                  type="button"
+                  onClick={() => clearSession('left')}
+                  className="ml-2 rounded p-1 text-[var(--text)] opacity-60 hover:bg-[var(--surface)] hover:opacity-100"
+                  title="Remove session"
+                >
+                  <X className="h-4 w-4" />
+                </button>
               </div>
               <ComparatorTimeline
-                entries={leftEntries}
+                entries={filteredLeftEntries}
                 highlightedIds={highlightedIds}
                 ignoredIds={ignoredIds}
                 rowRef={handleRowRef}
@@ -271,13 +344,21 @@ export function Comparator() {
           ref={rightRef}
           className="flex flex-1 flex-col overflow-y-auto px-4"
         >
-          {rightSession ? (
+            {rightSession ? (
             <>
-              <div className="sticky top-0 z-20 border-b border-[var(--border)] bg-[var(--background)] px-2 py-2 text-sm font-medium text-[var(--text-h)]">
-                {rightSession.title}
+              <div className="sticky top-0 z-20 flex items-center justify-between border-b border-[var(--border)] bg-[var(--background)] px-2 py-2">
+                <span className="truncate text-sm font-medium text-[var(--text-h)]">{rightSession.title}</span>
+                <button
+                  type="button"
+                  onClick={() => clearSession('right')}
+                  className="ml-2 rounded p-1 text-[var(--text)] opacity-60 hover:bg-[var(--surface)] hover:opacity-100"
+                  title="Remove session"
+                >
+                  <X className="h-4 w-4" />
+                </button>
               </div>
               <ComparatorTimeline
-                entries={rightEntries}
+                entries={filteredRightEntries}
                 highlightedIds={highlightedIds}
                 ignoredIds={ignoredIds}
                 rowRef={handleRowRef}

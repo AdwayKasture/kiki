@@ -7,6 +7,7 @@ interface ComparatorState {
   ignoredIds: Set<string>
 
   setSession: (side: 'left' | 'right', session: Session | null) => void
+  clearSession: (side: 'left' | 'right') => void
   setIgnored: (id: string, ignored: boolean) => void
   swapSides: () => void
   reset: () => void
@@ -25,6 +26,21 @@ export const useComparatorStore = create<ComparatorState>((set) => ({
     }
   },
 
+  clearSession(side) {
+    set((state) => {
+      const session = side === 'left' ? state.leftSession : state.rightSession
+      const sessionIds = new Set(session?.entries.map((e) => e.id) ?? [])
+      const nextIgnored = new Set(state.ignoredIds)
+      for (const id of sessionIds) {
+        nextIgnored.delete(id)
+      }
+      return {
+        [side === 'left' ? 'leftSession' : 'rightSession']: null,
+        ignoredIds: nextIgnored,
+      } as Pick<ComparatorState, 'leftSession' | 'rightSession' | 'ignoredIds'>
+    })
+  },
+
   setIgnored(id, ignored) {
     set((state) => {
       const next = new Set(state.ignoredIds)
@@ -41,6 +57,7 @@ export const useComparatorStore = create<ComparatorState>((set) => ({
     set((state) => ({
       leftSession: state.rightSession,
       rightSession: state.leftSession,
+      ignoredIds: new Set(),
     }))
   },
 
