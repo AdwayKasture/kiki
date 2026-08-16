@@ -66,10 +66,6 @@ function isAssistantMarker(line: string): boolean {
   return false
 }
 
-function isTextHeading(line: string): boolean {
-  return /^##\s+/.test(line.trim())
-}
-
 function readCodeBlock(lines: string[], startIndex: number): { block: string[]; nextIndex: number } {
   const block: string[] = []
   let i = startIndex
@@ -146,10 +142,6 @@ function parseAssistantBody(bodyLines: string[]): Entry[] {
 
       entries.push({ type: 'tool', tool: toolName, input, output } as ToolEntry)
       continue
-    }
-
-    if (isTextHeading(line)) {
-      flushText()
     }
 
     textBuffer.push(line)
