@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { PanelLeft, PanelRight, Brain, GitCompare } from 'lucide-react'
+import { Group, Panel, Separator } from 'react-resizable-panels'
 import { Overview } from './components/Overview'
 import { SessionList } from './components/SessionList'
 import { Timeline } from './components/Timeline'
@@ -86,8 +87,8 @@ export default function App() {
           {activeView === 'comparator' ? (
             <Comparator />
           ) : selectedSession ? (
-            <>
-              <div className="flex flex-1 flex-col overflow-hidden">
+            <Group orientation="horizontal" className="flex flex-1">
+              <Panel defaultSize={65} minSize={30} className="flex flex-col overflow-hidden">
                 <div className="border-b border-[var(--border)] px-6 py-3">
                   <h2 className="truncate text-base">{selectedSession.title}</h2>
                   <p className="text-xs opacity-60">
@@ -102,12 +103,14 @@ export default function App() {
                     onSelect={selectEntry}
                   />
                 </div>
-              </div>
+              </Panel>
 
-              <div className="w-[420px] shrink-0 overflow-hidden border-l border-[var(--border)]">
+              <Separator className="w-1 bg-[var(--border)] transition-colors hover:bg-[var(--accent)]" />
+
+              <Panel defaultSize={35} minSize={20} className="flex flex-col overflow-hidden">
                 <DetailPanel entry={selectedEntry} />
-              </div>
-            </>
+              </Panel>
+            </Group>
           ) : (
             <Overview />
           )}
