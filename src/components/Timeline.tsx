@@ -11,7 +11,7 @@ const icons = {
 
 function getLabel(entry: Entry): string {
   if (entry.type === 'tool') return entry.tool
-  if (entry.type === 'thinking') return 'Assistant'
+  if (entry.type === 'thinking') return 'Thinking'
   if (entry.type === 'text') return 'Assistant'
   return 'User'
 }
@@ -116,6 +116,7 @@ export function Timeline({ entries, selectedId, onSelect }: TimelineProps) {
                   className={cn(
                     'mt-1 truncate text-sm',
                     isSelected ? 'text-[var(--text-h)]' : 'text-[var(--text)]',
+                    entry.type === 'thinking' && 'italic opacity-70',
                   )}
                 >
                   {previewText(entry)}

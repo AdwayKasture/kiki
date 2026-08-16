@@ -13,7 +13,7 @@ const icons = {
 
 function getLabel(entry: Entry): string {
   if (entry.type === 'tool') return entry.tool
-  if (entry.type === 'thinking') return 'Assistant'
+  if (entry.type === 'thinking') return 'Thinking'
   if (entry.type === 'text') return 'Assistant message'
   return 'User message'
 }
