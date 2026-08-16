@@ -230,6 +230,9 @@ export function Comparator() {
     return ids
   }, [leftUnmatched, rightUnmatched])
 
+  const matchedCount = matches.length
+  const unmatchedCount = unmatchedIds.size
+
   const visibleLeftEntries = useMemo(
     () =>
       hideUnmatched
@@ -332,6 +335,18 @@ export function Comparator() {
                 <FilterX className="h-3.5 w-3.5" />
                 Hide unmatched
               </button>
+
+              <div className="flex items-center gap-1.5 rounded-md border border-[var(--border)] px-2 py-1 text-xs">
+                <span className="flex items-center gap-1 text-emerald-600" title="Matched tool pairs">
+                  <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                  {matchedCount}
+                </span>
+                <span className="text-[var(--border)]">|</span>
+                <span className="flex items-center gap-1 text-red-500" title="Unmatched tool calls">
+                  <span className="h-2 w-2 rounded-full bg-red-500" />
+                  {unmatchedCount}
+                </span>
+              </div>
 
               <button
                 type="button"
