@@ -62,7 +62,12 @@ function isAssistantMarker(line: string): boolean {
   const trimmed = line.trim()
   if (trimmed === '_Thinking:_') return true
   if (/^\*\*Tool:\s*(.+?)\*\*$/.test(trimmed)) return true
+  if (/^##\s+/.test(trimmed)) return true
   return false
+}
+
+function isTextHeading(line: string): boolean {
+  return /^##\s+/.test(line.trim())
 }
 
 function readCodeBlock(lines: string[], startIndex: number): { block: string[]; nextIndex: number } {
@@ -141,6 +146,10 @@ function parseAssistantBody(bodyLines: string[]): Entry[] {
 
       entries.push({ type: 'tool', tool: toolName, input, output } as ToolEntry)
       continue
+    }
+
+    if (isTextHeading(line)) {
+      flushText()
     }
 
     textBuffer.push(line)
