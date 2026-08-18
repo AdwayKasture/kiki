@@ -1,15 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Upload, ArrowRightLeft, Sparkles, X, Link2, Unlink, Wrench, FilterX } from 'lucide-react'
 import { cn } from '../lib/utils'
-import { parseSessionMarkdown } from '../lib/parseSession'
+import { createSession } from '../lib/api'
 import { computeToolMatches } from '../lib/compareSessions'
 import { useComparatorEntries, useComparatorSession, useComparatorStore } from '../store/comparatorStore'
 import { ComparatorTimeline } from './ComparatorTimeline'
 import type { Session } from '../types'
-
-function makeSessionId() {
-  return `cmp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
-}
 
 function UploadZone({
   side,
@@ -23,7 +19,7 @@ function UploadZone({
   const loadMarkdown = useCallback(
     async (file: File) => {
       const text = await file.text()
-      const session = parseSessionMarkdown(text, makeSessionId())
+      const session = await createSession(text)
       onSession(session)
     },
     [onSession],

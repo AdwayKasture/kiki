@@ -1,22 +1,21 @@
-import { useCallback, useRef } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import { Upload, Sparkles } from 'lucide-react'
 import { cn } from '../lib/utils'
-import { parseSessionMarkdown } from '../lib/parseSession'
 import { useSessionStore } from '../store/sessionStore'
-
-function makeSessionId() {
-  return `session-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
-}
 
 export function Overview() {
   const inputRef = useRef<HTMLInputElement>(null)
   const addSession = useSessionStore((s) => s.addSession)
+  const loadSessions = useSessionStore((s) => s.loadSessions)
+
+  useEffect(() => {
+    loadSessions()
+  }, [loadSessions])
 
   const loadMarkdown = useCallback(
     async (file: File) => {
       const text = await file.text()
-      const session = parseSessionMarkdown(text, makeSessionId())
-      addSession(session)
+      await addSession(text)
     },
     [addSession],
   )
@@ -41,16 +40,6 @@ export function Overview() {
       e.target.value = ''
     },
     [loadMarkdown],
-  )
-
-  const loadFixture = useCallback(
-    async (path: string) => {
-      const response = await fetch(path)
-      const text = await response.text()
-      const session = parseSessionMarkdown(text, makeSessionId())
-      addSession(session)
-    },
-    [addSession],
   )
 
   return (
@@ -89,23 +78,6 @@ export function Overview() {
           />
         </div>
 
-        <div className="flex items-center gap-3">
-          <span className="text-xs opacity-60">Try a sample:</span>
-          <button
-            type="button"
-            onClick={() => loadFixture('/fixtures/session-ses_0510.md')}
-            className="rounded-lg border border-[var(--border)] px-3 py-1.5 text-xs hover:bg-[var(--surface)]"
-          >
-            Sample 1
-          </button>
-          <button
-            type="button"
-            onClick={() => loadFixture('/fixtures/session-ses_0c33.md')}
-            className="rounded-lg border border-[var(--border)] px-3 py-1.5 text-xs hover:bg-[var(--surface)]"
-          >
-            Sample 2
-          </button>
-        </div>
       </div>
     </div>
   )

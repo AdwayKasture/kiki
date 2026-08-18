@@ -7,10 +7,30 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-dist
+# Frontend
+frontend/node_modules
+frontend/dist
 dist-ssr
 *.local
+
+# Elixir / Phoenix
+backend/_build/
+backend/cover/
+backend/deps/
+backend/doc/
+backend/.fetch
+tmp/
+*.ez
+backend/kiki-*.tar
+
+# Database files
+backend/priv/static/assets/
+backend/priv/static/index.html
+backend/priv/static/icons.svg
+backend/priv/static/favicon.svg
+
+# Generated on crash by the VM
+erl_crash.dump
 
 # Editor directories and files
 .vscode/*
